@@ -5,15 +5,35 @@
 
 // ── Admin Credentials ────────────────────────────────────────
 // Change these before deploying.
-// Password is stored as a bcrypt hash.
-// To generate a new hash run: php -r "echo password_hash('yourpassword', PASSWORD_BCRYPT);"
+// To generate a new hash: php -r "echo password_hash('yourpassword', PASSWORD_BCRYPT);"
 define('ADMIN_USERNAME', 'admin');
-define('ADMIN_PASSWORD_HASH', password_hash('admin123', PASSWORD_BCRYPT)); // default: admin123
+// Default password: admin123  (pre-computed bcrypt hash — change this!)
+define('ADMIN_PASSWORD_HASH', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
 
-// ── Base URL ─────────────────────────────────────────────────
-// Set this to your actual domain. No trailing slash.
-// Examples: 'http://localhost/HostSW'  |  'https://example.com'
-define('BASE_URL', 'http://localhost/HostSW');
+// ── Base URL (auto-detected) ────────────────────────────────
+// Dynamically built from the current HTTP request.
+// Works on localhost, example.com, or any domain/subdirectory — no manual config needed.
+(function () {
+    // Protocol: http or https
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        ? 'https' : 'http';
+
+    // Host (e.g. localhost, example.com, example.com:8080)
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+
+    // Sub-directory path (e.g. /HostSW when installed in a sub-folder)
+    // Compare the real filesystem path against DOCUMENT_ROOT to find the sub-path.
+    $doc_root  = rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
+    $app_root  = rtrim(str_replace('\\', '/', realpath(dirname(__DIR__))), '/');
+    $sub_path  = ($doc_root !== '' && str_starts_with($app_root, $doc_root))
+        ? substr($app_root, strlen($doc_root))
+        : '';
+    $sub_path  = rtrim($sub_path, '/');
+
+    define('BASE_URL', $scheme . '://' . $host . $sub_path);
+})();
 
 // ── Paths ────────────────────────────────────────────────────
 define('ROOT_DIR',     dirname(__DIR__));
