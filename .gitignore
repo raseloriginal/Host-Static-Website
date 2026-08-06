@@ -1,0 +1,19 @@
+# ── Uploaded websites (user data, not tracked) ────────────────
+websites/*
+!websites/.htaccess
+
+# ── Temp upload directory ─────────────────────────────────────
+temp/*
+!temp/.htaccess
+
+# ── OS / Editor junk ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log

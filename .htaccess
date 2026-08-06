@@ -1,0 +1,32 @@
+# HostSW – Root .htaccess
+# Protects config/, temp/, and API internals from direct access.
+
+Options -Indexes
+
+# Block direct access to sensitive directories
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Block config directory
+  RewriteRule ^config/ - [F,L]
+
+  # Block temp directory
+  RewriteRule ^temp/ - [F,L]
+
+  # Block auth_check and deploy_helper (internal PHP includes)
+  RewriteRule ^api/auth_check\.php$ - [F,L]
+  RewriteRule ^api/deploy_helper\.php$ - [F,L]
+</IfModule>
+
+# Block access to hidden files (dot-files like .hostsw_meta.json)
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
