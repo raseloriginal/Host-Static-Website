@@ -8,7 +8,7 @@
 // To generate a new hash: php -r "echo password_hash('yourpassword', PASSWORD_BCRYPT);"
 define('ADMIN_USERNAME', 'admin');
 // Default password: admin123  (pre-computed bcrypt hash — change this!)
-define('ADMIN_PASSWORD_HASH', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+define('ADMIN_PASSWORD_HASH', '$2y$10$HFHVOE0xUisoaLhR7lLynucSTW.H/7AIpIAvccQw3kXJIt.KQk8yO');
 
 // ── Base URL (auto-detected) ────────────────────────────────
 // Dynamically built from the current HTTP request.
