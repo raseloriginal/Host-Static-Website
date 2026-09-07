@@ -21,4 +21,12 @@ if (is_dir(website_path($name))) {
     json_response(['success' => false, 'error' => "A website named \"{$name}\" already exists."], 409);
 }
 
-deploy_zip($name, $title, $description, false);
+$deploy_type = strtolower(trim($_POST['deploy_type'] ?? 'zip'));
+$html_code   = $_POST['html_code'] ?? '';
+
+if ($deploy_type === 'html' || !empty($html_code)) {
+    deploy_html($name, $title, $description, $html_code);
+} else {
+    deploy_zip($name, $title, $description, false);
+}
+

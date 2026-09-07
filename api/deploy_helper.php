@@ -186,3 +186,41 @@ function deploy_zip(string $name, string $title, string $description, bool $repl
         'size'    => format_bytes($meta['size_bytes']),
     ]);
 }
+
+/**
+ * Deploy a website from raw HTML code string.
+ * Sends a JSON response and exits.
+ */
+function deploy_html(string $name, string $title, string $description, string $html_code): void {
+    if (trim($html_code) === '') {
+        json_response(['success' => false, 'error' => 'HTML code cannot be empty.'], 400);
+    }
+
+    $dest = website_path($name);
+    if (!is_dir($dest)) {
+        if (!mkdir($dest, 0755, true)) {
+            json_response(['success' => false, 'error' => 'Server error: could not create website directory.'], 500);
+        }
+    }
+
+    if (file_put_contents($dest . '/index.html', $html_code) === false) {
+        json_response(['success' => false, 'error' => 'Server error: failed to write index.html.'], 500);
+    }
+
+    $meta = [
+        'title'       => $title ?: $name,
+        'description' => $description,
+        'deployed_at' => time(),
+        'size_bytes'  => dir_size($dest),
+    ];
+    file_put_contents($dest . '/.hostsw_meta.json', json_encode($meta, JSON_PRETTY_PRINT));
+
+    json_response([
+        'success' => true,
+        'message' => 'Website deployed successfully.',
+        'name'    => $name,
+        'url'     => website_url($name),
+        'size'    => format_bytes($meta['size_bytes']),
+    ]);
+}
+

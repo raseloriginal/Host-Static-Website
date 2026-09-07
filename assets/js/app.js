@@ -188,6 +188,7 @@ function renderTable() {
       <td>
         <div class="actions-cell">
           <button class="btn btn-icon btn-ghost" title="Open website" onclick="openSite('${escHtml(site.url)}')">🌐</button>
+          <button class="btn btn-icon btn-ghost" title="Edit Code" onclick="window.location.href='editor.php?site=${encodeURIComponent(site.name)}'">💻</button>
           <button class="btn btn-icon btn-ghost" title="Copy URL" onclick="copyToClipboard('${escHtml(site.url)}')">📋</button>
           <button class="btn btn-icon btn-ghost" title="Download ZIP" onclick="downloadSite('${escHtml(site.name)}')">⬇️</button>
           <button class="btn btn-icon btn-ghost" title="Replace website" onclick="openReplaceModal('${escHtml(site.name)}')">🔄</button>
@@ -248,10 +249,94 @@ function downloadSite(name) {
 }
 
 // ── ADD WEBSITE MODAL ────────────────────────────────────────
+function switchAddTab(mode) {
+  const typeInput = document.getElementById('add-deploy-type');
+  if (typeInput) typeInput.value = mode;
+
+  const btnZip   = document.getElementById('tab-btn-zip');
+  const btnHtml  = document.getElementById('tab-btn-html');
+  const paneZip  = document.getElementById('add-zip-container');
+  const paneHtml = document.getElementById('add-html-container');
+  const hint     = document.getElementById('add-req-hint');
+
+  if (mode === 'html') {
+    if (btnZip) btnZip.classList.remove('active');
+    if (btnHtml) btnHtml.classList.add('active');
+    if (paneZip) paneZip.classList.add('hidden');
+    if (paneHtml) paneHtml.classList.remove('hidden');
+    if (hint) {
+      hint.innerHTML = '<strong>📋 Note:</strong> Your HTML code will be saved as <code style="color:var(--text-accent)">index.html</code>. Only static HTML/CSS/JS is supported.';
+    }
+  } else {
+    if (btnHtml) btnHtml.classList.remove('active');
+    if (btnZip) btnZip.classList.add('active');
+    if (paneHtml) paneHtml.classList.add('hidden');
+    if (paneZip) paneZip.classList.remove('hidden');
+    if (hint) {
+      hint.innerHTML = '<strong>📋 Requirements:</strong> Your ZIP must contain <code style="color:var(--text-accent)">index.html</code> at the root level. Only static files are allowed. PHP and server-side scripts are rejected.';
+    }
+  }
+}
+
+function insertSampleHtml() {
+  const textarea = document.getElementById('add-html-code');
+  if (textarea) {
+    textarea.value = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to My Website</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #1e293b;
+      padding: 2.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      text-align: center;
+      max-width: 450px;
+    }
+    h1 { color: #38bdf8; margin-top: 0; }
+    p { color: #94a3b8; line-height: 1.6; }
+    .btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: #0284c7;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Website Online!</h1>
+    <p>This static website was hosted directly using HTML code on HostSW.</p>
+    <a href="#" class="btn">Explore More</a>
+  </div>
+</body>
+</html>`;
+  }
+}
+
 function openAddModal() {
   const overlay = document.getElementById('add-modal-overlay');
   overlay.classList.add('open');
   document.getElementById('add-form').reset();
+  switchAddTab('zip');
   document.getElementById('add-file-info').classList.add('hidden');
   document.getElementById('add-drop-zone').classList.remove('has-file');
   document.getElementById('add-drop-zone').querySelector('.drop-zone-icon').textContent = '📦';
@@ -342,39 +427,47 @@ function formatFileSize(bytes) {
 // Submit add form
 async function submitAddForm(e) {
   e.preventDefault();
-  const form    = document.getElementById('add-form');
-  const btn     = document.getElementById('add-submit-btn');
+  const btn      = document.getElementById('add-submit-btn');
   const progress = document.getElementById('add-upload-progress');
-  const errBox  = document.getElementById('add-form-error');
-  const errMsg  = document.getElementById('add-form-error-msg');
+  const errBox   = document.getElementById('add-form-error');
+  const errMsg   = document.getElementById('add-form-error-msg');
 
   errBox.classList.add('hidden');
 
+  const mode  = document.getElementById('add-deploy-type').value;
   const name  = document.getElementById('add-name').value.trim();
   const title = document.getElementById('add-title').value.trim();
   const desc  = document.getElementById('add-desc').value.trim();
-  const file  = document.getElementById('add-zip').files[0];
 
   if (!name) { showFormError(errMsg, errBox, 'Website name is required.'); return; }
   if (!/^[a-z0-9][a-z0-9\-]{0,49}$/.test(name)) { showFormError(errMsg, errBox, 'Invalid website name format.'); return; }
-  if (!file) { showFormError(errMsg, errBox, 'Please select a ZIP file.'); return; }
-  if (!file.name.toLowerCase().endsWith('.zip')) { showFormError(errMsg, errBox, 'Only ZIP files are accepted.'); return; }
 
   const fd = new FormData();
+  fd.append('deploy_type', mode);
   fd.append('name', name);
   fd.append('title', title);
   fd.append('description', desc);
-  fd.append('zipfile', file);
+
+  if (mode === 'html') {
+    const code = document.getElementById('add-html-code').value;
+    if (!code.trim()) { showFormError(errMsg, errBox, 'Please enter or paste your HTML code.'); return; }
+    fd.append('html_code', code);
+  } else {
+    const file = document.getElementById('add-zip').files[0];
+    if (!file) { showFormError(errMsg, errBox, 'Please select a ZIP file.'); return; }
+    if (!file.name.toLowerCase().endsWith('.zip')) { showFormError(errMsg, errBox, 'Only ZIP files are accepted.'); return; }
+    fd.append('zipfile', file);
+  }
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Deploying…';
-  progress.classList.remove('hidden');
+  if (mode === 'zip') progress.classList.remove('hidden');
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', 'api/upload.php', true);
 
   xhr.upload.onprogress = ev => {
-    if (ev.lengthComputable) {
+    if (ev.lengthComputable && mode === 'zip') {
       const pct = Math.round((ev.loaded / ev.total) * 100);
       document.getElementById('add-progress-fill').style.width = pct + '%';
       document.getElementById('add-progress-pct').textContent  = pct + '%';
@@ -396,7 +489,7 @@ async function submitAddForm(e) {
       Toast.success('Deployed!', `<a href="${escHtml(data.url)}" target="_blank" style="color:var(--text-accent)">${escHtml(data.url)}</a>`);
       loadWebsites();
     } else {
-      showFormError(errMsg, errBox, data.error || 'Upload failed.');
+      showFormError(errMsg, errBox, data.error || 'Deployment failed.');
     }
   };
 
@@ -409,6 +502,7 @@ async function submitAddForm(e) {
 
   xhr.send(fd);
 }
+
 
 function showFormError(msgEl, boxEl, msg) {
   msgEl.textContent = msg;

@@ -230,20 +230,53 @@ $admin_user = htmlspecialchars($_SESSION['user'] ?? 'admin');
           </div>
         </div>
 
-        <!-- Drop zone -->
-        <div class="form-group">
-          <label class="form-label">ZIP File <span style="color:var(--danger)">*</span></label>
-          <div class="drop-zone" id="add-drop-zone" role="button" tabindex="0" aria-label="Upload ZIP file">
-            <input type="file" id="add-zip" name="zipfile" accept=".zip,application/zip" required>
-            <div class="drop-zone-icon">📦</div>
-            <div class="drop-zone-text">Drag & drop your ZIP here</div>
-            <div class="drop-zone-sub">or click to browse · ZIP files only · Max 500 MB</div>
+        <!-- Mode Tabs -->
+        <div class="modal-tabs">
+          <button type="button" class="modal-tab-btn active" id="tab-btn-zip" onclick="switchAddTab('zip')">
+            📦 Upload ZIP File
+          </button>
+          <button type="button" class="modal-tab-btn" id="tab-btn-html" onclick="switchAddTab('html')">
+            📝 Paste HTML Code
+          </button>
+        </div>
+        <input type="hidden" id="add-deploy-type" name="deploy_type" value="zip">
+
+        <!-- Drop zone (ZIP Mode) -->
+        <div id="add-zip-container" class="tab-pane">
+          <div class="form-group">
+            <label class="form-label">ZIP File <span style="color:var(--danger)">*</span></label>
+            <div class="drop-zone" id="add-drop-zone" role="button" tabindex="0" aria-label="Upload ZIP file">
+              <input type="file" id="add-zip" name="zipfile" accept=".zip,application/zip">
+              <div class="drop-zone-icon">📦</div>
+              <div class="drop-zone-text">Drag & drop your ZIP here</div>
+              <div class="drop-zone-sub">or click to browse · ZIP files only · Max 500 MB</div>
+            </div>
+            <div id="add-file-info" class="file-info hidden">
+              <span class="file-info-icon">📦</span>
+              <span class="file-info-name"></span>
+              <span class="file-info-size"></span>
+              <button type="button" class="file-info-clear" title="Remove file">✕</button>
+            </div>
           </div>
-          <div id="add-file-info" class="file-info hidden">
-            <span class="file-info-icon">📦</span>
-            <span class="file-info-name"></span>
-            <span class="file-info-size"></span>
-            <button type="button" class="file-info-clear" title="Remove file">✕</button>
+        </div>
+
+        <!-- HTML Code Editor (HTML Mode) -->
+        <div id="add-html-container" class="tab-pane hidden">
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+              <label class="form-label" for="add-html-code" style="margin-bottom:0">HTML Code <span style="color:var(--danger)">*</span></label>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="insertSampleHtml()" style="font-size:0.75rem;padding:2px 8px">
+                ✨ Insert Sample Template
+              </button>
+            </div>
+            <textarea
+              class="code-textarea"
+              id="add-html-code"
+              name="html_code"
+              rows="9"
+              placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>&#10;  <title>My Website</title>&#10;</head>&#10;<body>&#10;  <h1>Hello World!</h1>&#10;</body>&#10;</html>"
+            ></textarea>
+            <div class="form-hint">Paste your complete static HTML code. It will be saved as <code>index.html</code>.</div>
           </div>
         </div>
 
@@ -258,10 +291,11 @@ $admin_user = htmlspecialchars($_SESSION['user'] ?? 'admin');
           </div>
         </div>
 
-        <div style="background:var(--bg-tertiary);border-radius:var(--radius-md);padding:.85rem 1rem;font-size:.8rem;color:var(--text-secondary)">
+        <div id="add-req-hint" style="background:var(--bg-tertiary);border-radius:var(--radius-md);padding:.85rem 1rem;font-size:.8rem;color:var(--text-secondary)">
           <strong>📋 Requirements:</strong> Your ZIP must contain <code style="color:var(--text-accent)">index.html</code> at the root level.
-          Only static files are allowed (HTML, CSS, JS, images, fonts, etc.). PHP and server-side scripts are rejected.
+          Only static files are allowed. PHP and server-side scripts are rejected.
         </div>
+
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
